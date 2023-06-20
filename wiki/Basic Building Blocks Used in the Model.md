@@ -72,6 +72,7 @@ Another thing to note that the above diagram assumes that $\mathbf{z}^{(l+2)}$ a
 $$
 \begin{aligned}
     \mathbf{a}^{(l+2)} &= \mathrm{ReLU}(\mathbf{z}^{(l+2)} + \mathbf{W}_s\mathbf{a}^{(l)})\\
-    &= \mathrm{ReLU}(\mathbf{W}^{(l+2)}\mathbf{a}^{(l+1)} + \mathbf{b}^{(l+1)}+\mathbf{W}_s\mathbf{a}^{(l)})
+    &= \mathrm{ReLU}(\mathbf{W}^{(l+2)}\mathbf{a}^{(l+1)} + \mathbf{b}^{(l+1)}+\mathbf{W}_s\mathbf{a}^{(l)}),
 \end{aligned}
 $$
+where $\mathbf{W}_s \in \mathbb{R}^{256\times128}$.
