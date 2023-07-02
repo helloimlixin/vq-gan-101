@@ -64,21 +64,28 @@ class ResidualBlock(nn.Module):
                 in_channels, out_channels, kernel_size=1, stride=1, padding=0)
     
     def forward(self, x):
-        if self.in_channels != self.out_channels:
+        if self.in_channels != self.out_channels: # handle dimension mismatch for skip connections
             x = self.channel_up(x) + self.block(x)
         else:
-            return x + self.block(x)
+            return x + self.block(x) # skip connection
 
 class UpSampleBlock(nn.Module):
+    '''Up-Sample Block, consists of a single convolutional layer and an additional
+    prescale of the input features, resulting in a 2x up-sampling of the input.
+    '''
     def __init__(self, channels):
         super(UpSampleBlock, self).__init__()
         self.conv = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1)
     
     def forward(self, x):
-        x = F.interpolate(x, scale_factor=2, mode='nearest')
+        x = F.interpolate(x, scale_factor=2, mode='nearest') # up-sample by nearest-neighbor interpolation
         return self.conv(x)
 
 class DownSampleBlock(nn.Module):
+    '''Just a reverse of UpSampleBlock, consists of a single convolutional layer and
+    a padding operation before the downsampling operation, resulting in a 2x down-sampling
+    of the input, off by 1 pixel.
+    '''
     def __init__(self) -> None:
         super(DownSampleBlock, self).__init__()
         self.conv = nn.Conv2d(3, 3, kernel_size=3, stride=2, padding=0)
@@ -89,3 +96,46 @@ class DownSampleBlock(nn.Module):
         
         return self.conv(x)
 
+class NonLocalBlock(nn.Module):
+    '''
+    Non-local block, used for long-range dependencies. It is a generalization of
+    the self-attention mechanism. See,
+    Wang, Xiaolong, et al. "Non-local neural networks."
+    Proceedings of the IEEE conference on computer vision and
+    pattern recognition. 2018. 
+    '''
+    def __init__(self, channels):
+        super(NonLocalBlock, self).__init__()
+        self.in_channels = channels
+        
+        self.group_norm = GroupNorm(channels)
+        self.q = nn.Conv2d(channels, channels, kernel_size=1, stride=1, padding=0)
+        self.k = nn.Conv2d(channels, channels, kernel_size=1, stride=1, padding=0)
+        self.v = nn.Conv2d(channels, channels, kernel_size=1, stride=1, padding=0)
+        self.projection = nn.Conv2d(channels, channels, kernel_size=1, stride=1, padding=0)
+    
+    def forward(self, x):
+        hidden = self.group_norm(x)
+        q = self.q(hidden)
+        k = self.k(hidden)
+        v = self.v(hidden)
+        
+        # some reshaping for matrix multiplication
+        b, c, h, w = q.shape
+        
+        q = q.reshape(b, c, h * w)
+        q = q.permute(0, 2, 1)
+        k = k.reshape(b, c, h * w)
+        v = v.reshape(b, c, h * w)
+        
+        attn = torch.bmm(q, k) # batch matrix multiplication for attention
+        attn = attn * (int(c) ** (-0.5)) # scaling factor
+        attn = F.softmax(attn, dim=2) # softmax along the last dimension to get the probabilies as attention weights
+        attn = attn.permute(0, 2, 1) # transpose for matrix multiplication
+        
+        a = torch.bmm(v, attn)
+        a = a.reshape(b, c, h, w)
+        
+        return x + a # residual connection for baseline performance guarantee
+
+        
