@@ -14,6 +14,8 @@
 # All rights reserved.
 #
 
+# required imports
+import torch
 import torch.nn as nn
 
 
@@ -62,7 +64,14 @@ class CNNBlock(nn.Module):
 
 class Discriminator(nn.Module):
     def __init__(self, in_channels=3, feature_dim_last=64, num_layers=3) -> None:
-        super(Discriminator).__init__()
+        """constructor for the class.
+
+        Args:
+            in_channels (int, optional): number of input channels. Defaults to 3.
+            feature_dim_last (int, optional): number of features on the last layer. Defaults to 64.
+            num_layers (int, optional): number of layers. Defaults to 3.
+        """
+        super(Discriminator, self).__init__()
         # create a list of feature dimensions for each layer
         feature_dims = [min(feature_dim_last * 2**i, 8) for i in range(num_layers)]
 
@@ -71,11 +80,13 @@ class Discriminator(nn.Module):
                 in_channels=in_channels,
                 out_channels=feature_dims[0],
                 kernel_size=4,
-                stried=2,
+                stride=2,
                 padding=1,
             ),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
         ]  # layer initialization
+        
+        in_channels = feature_dims[0]  # update the number of input channels
 
         for feature_dim in feature_dims[1:]:  # skip the first layer
             layers.append(
@@ -107,3 +118,16 @@ class Discriminator(nn.Module):
             x (torch.Tensor): input tensor.
         """
         return self.model(x)
+
+'''
+Some basic tests that should always be there when creating a new model
+'''
+def test():
+    x = torch.randn((1, 3, 256, 256))
+    model = Discriminator(in_channels=3)
+    predictions = model(x)
+    print(model)
+    print(predictions.shape)
+
+if __name__ == "__main__":
+    test()
