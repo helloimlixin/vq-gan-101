@@ -73,7 +73,7 @@ class Discriminator(nn.Module):
         """
         super(Discriminator, self).__init__()
         # create a list of feature dimensions for each layer
-        feature_dims = [min(feature_dim_last * 2**i, 8) for i in range(num_layers)]
+        feature_dims = [feature_dim_last * min(2**i, 8) for i in range(num_layers + 1)]
 
         layers = [
             nn.Conv2d(
