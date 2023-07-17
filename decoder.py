@@ -6,18 +6,18 @@
 # All rights reserved.
 #
 import torch.nn as nn
-from helpers import ResidualBlock, NonLocalBlock, DownsampleBlock, UpsampleBlock, GroupNorm, Swish
+from helpers import ResidualBlock, NonLocalBlock, DownSampleBlock, UpSampleBlock, GroupNorm, Swish
 
 class Decoder(nn.Module):
     def __init__(self, args):
         super(Decoder, self).__init__()
-        channels = [512, 256, 256, 128, 128, 128]
+        channels = [512, 256, 256, 128, 128]
         attn_resolutions = [16]
         num_res_blocks = 3
         resolution = 16
         
         in_channels = channels[0]
-        layers = [nn.Conv2d(args.latent_channels, in_channels, 3, 1, 1),
+        layers = [nn.Conv2d(args.latent_dim, in_channels, 3, 1, 1),
                   ResidualBlock(in_channels, in_channels),
                   NonLocalBlock(in_channels),
                   ResidualBlock(in_channels, in_channels)]
@@ -30,7 +30,7 @@ class Decoder(nn.Module):
                 if resolution in attn_resolutions:
                     layers.append(NonLocalBlock(in_channels))
             if i != 0:
-                layers.append(UpsampleBlock(in_channels, out_channels))
+                layers.append(UpSampleBlock(in_channels))
                 resolution *= 2
         
         layers.append(GroupNorm(in_channels))

@@ -28,7 +28,7 @@ class GroupNorm(nn.Module):
         return self.gn(x)
 
 class Swish(nn.Module):
-    '''
+    """
     An activation function attained by Neural Architecture Search (NAS) with
     a little bit of modification. It is a smooth approximation of ReLU. Its
     most distinctive property is that has a non-monotonic "bump" and has the
@@ -36,10 +36,7 @@ class Swish(nn.Module):
     - Non-monotonicity
     - Unboundedness
     - Smoothness
-    '''
-    def __init__(self) -> None:
-        super(Swish, self).__init__()
-    
+    """
     def forward(self, x):
         return x * torch.sigmoid(x)
 
@@ -65,7 +62,7 @@ class ResidualBlock(nn.Module):
     
     def forward(self, x):
         if self.in_channels != self.out_channels: # handle dimension mismatch for skip connections
-            x = self.channel_up(x) + self.block(x)
+            return self.channel_up(x) + self.block(x)
         else:
             return x + self.block(x) # skip connection
 
@@ -78,7 +75,7 @@ class UpSampleBlock(nn.Module):
         self.conv = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1)
     
     def forward(self, x):
-        x = F.interpolate(x, scale_factor=2, mode='nearest') # up-sample by nearest-neighbor interpolation
+        x = F.interpolate(x, scale_factor=2) # up-sample by nearest-neighbor interpolation
         return self.conv(x)
 
 class DownSampleBlock(nn.Module):
@@ -86,9 +83,9 @@ class DownSampleBlock(nn.Module):
     a padding operation before the downsampling operation, resulting in a 2x down-sampling
     of the input, off by 1 pixel.
     '''
-    def __init__(self) -> None:
+    def __init__(self, channels) -> None:
         super(DownSampleBlock, self).__init__()
-        self.conv = nn.Conv2d(3, 3, kernel_size=3, stride=2, padding=0)
+        self.conv = nn.Conv2d(channels, channels, kernel_size=3, stride=2, padding=0)
     
     def forward(self, x):
         padding = (0, 1, 0, 1)

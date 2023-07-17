@@ -10,8 +10,8 @@ import torch.nn as nn
 from helpers import (
     ResidualBlock,
     NonLocalBlock,
-    DownsampleBlock,
-    UpsampleBlock,
+    DownSampleBlock,
+    UpSampleBlock,
     GroupNorm,
     Swish,
 )
@@ -37,15 +37,15 @@ class Encoder(nn.Module):
                 in_channels = out_channels
                 if resolution in attn_resolutions:
                     layers.append(NonLocalBlock(in_channels))
-            if i < len(channels) - 2:
-                layers.append(DownsampleBlock(in_channels, out_channels))
+            if i != len(channels) - 2:
+                layers.append(DownSampleBlock(channels[i+1]))
                 resolution //= 2
         layers.append(ResidualBlock(channels[-1], channels[-1]))
         layers.append(NonLocalBlock(channels[-1]))
         layers.append(ResidualBlock(channels[-1], channels[-1]))
         layers.append(GroupNorm(channels[-1]))
         layers.append(Swish())
-        layers.append(nn.Conv2d(channels[-1], args.latent_channels, 3, 1, 1))
+        layers.append(nn.Conv2d(channels[-1], args.latent_dim, 3, 1, 1))
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):

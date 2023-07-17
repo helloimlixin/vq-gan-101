@@ -19,7 +19,7 @@ class Codebook(nn.Module):
         # the embedding matrix is initialized uniformly
         self.embedding = nn.Embedding(self.num_codebook_vectors, self.latent_dim)
         self.embedding.weight.data.uniform_(
-            -1 / self.num_codebook_vectors, 1 / self.num_codebook_vectors
+            -1. / self.num_codebook_vectors, 1. / self.num_codebook_vectors
         )
 
     def forward(self, z):

@@ -27,6 +27,7 @@ class ImageDataset(Dataset):
         self.image_paths = [
             os.path.join(image_dir, file) for file in os.listdir(image_dir)
         ]
+
         self._length = len(self.image_paths)
 
         self.rescaler = albumentations.SmallestMaxSize(
@@ -36,6 +37,9 @@ class ImageDataset(Dataset):
             height=self.size, width=self.size
         )  # center crop to square
         self.preprocessor = albumentations.Compose([self.rescaler, self.cropper])
+        self.images = []
+        for img_path in self.image_paths:
+            self.images.append(self.preprocess_image(img_path))     
 
     def __len__(self):
         return self._length
@@ -61,8 +65,8 @@ class ImageDataset(Dataset):
 
         return image
 
-    def __getitem__(self, idx):
-        sample = self.preprocess_image(self.image_paths[idx])
+    def __getitem__(self, i):
+        sample = self.images[i]
 
         return sample
 
@@ -76,7 +80,7 @@ def load_data(args):
     Returns:
         torch.utils.data.DataLoader: DataLoader for the dataset.
     """
-    train_dataset = ImageDataset(args.image_dir, size=256)
+    train_dataset = ImageDataset(args.dataset_path, size=256)
     train_dataloader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True
     )
@@ -89,18 +93,18 @@ Module utils.
 """
 
 
-def init_weights(module):
+def init_weights(m):
     """Initialize the weights of the module.
 
     Args:
-        module (nn.Module): Module to initialize the weights of.
+        m (nn.Module): Module to initialize the weights of.
     """
-    classname = module.__class__.__name__
+    classname = m.__class__.__name__
     if classname.find("Conv") != -1:
-        nn.init.normal_(module.weight.data, 0.0, 0.02)
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find("BatchNorm") != -1:
-        nn.init.normal_(module.weight.data, 1.0, 0.02)
-        nn.init.constant_(module.bias.data, 0)
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)
 
 
 def plot_images(images):
